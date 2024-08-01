@@ -1,0 +1,58 @@
+
+install.packages("statnet")   # Network hypotheses/models
+install.packages("ergm")      # ERG models (in Statnet)
+install.packages("Rglpk")     # Needed for model estimation
+
+#Import matrix
+data <- read.csv("~/Desktop/Sunbelt_June/Sunbelt_Ville_June/adjacency_matrix.csv", header=F, as.is = F)
+
+
+# ================ ~~ Directed network ================
+help('ergm-terms')
+
+library(statnet)
+
+#Create two Statnet network objects
+
+#---------Convert into matrix---------#
+data_stat <- as.matrix(data)
+
+#---------Create Statnet network object---------#
+#network object
+data_net <- network(data_stat, directed = TRUE, matrix.type = "adjacency",
+                    loops=F, multiple=F)
+data_net
+
+
+#---------Exponential random graph model---------#
+#install.packages("ergm")
+library(ergm)
+
+help('ergm-terms')
+
+#1 
+lap_model <- ergm(data_net ~ edges)
+summary(lap_model)
+
+#2 
+lap_model <- ergm(data_net ~ edges + mutual)  
+summary(lap_model)
+
+#1-5
+lap_model <- ergm(data_net ~ edges #connections 
+                   + mutual #reciprocity 
+                   + gwesp(0.2, fixed=T) #Transitive closure 
+                   + edgecov(doc_net) #H4: Doc sharing tie 
+                   + nodeicov("expertise") #H5: Incoming links
+                   + nodeocov("expertise") #H6: Outgoing links
+)
+summary(lap_model)
+
+
+
+#---------Goodness of Fit---------#
+
+#Calculate gof and plot 
+gof_1 <- gof(lap_model)
+gof_1
+plot(gof_1)
